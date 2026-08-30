@@ -15,6 +15,18 @@ const LOADING_STAGES = [
   "Scoring evidence…",
 ];
 
+const EXAMPLES = [
+  "Drinking lemon water every morning boosts your metabolism",
+  "5G networks were rolled out to spread COVID-19",
+  "This new law bans all gas stoves nationwide by 2027",
+];
+
+const PRINCIPLES = [
+  { label: "Real evidence only", detail: "Every source is retrieved live, never invented." },
+  { label: "Transparent scoring", detail: "The score is arithmetic on visible sub-scores, not a guess." },
+  { label: "Says what it doesn't know", detail: "Thin evidence returns \u201cInsufficient Evidence,\u201d not a made-up number." },
+];
+
 export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,8 +59,9 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  async function analyze() {
-    if (!input.trim()) return;
+  async function analyze(overrideInput?: string) {
+    const text = overrideInput ?? input;
+    if (!text.trim()) return;
     setStage(0);
     setLoading(true);
     setError(null);
@@ -57,7 +70,7 @@ export default function Home() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input }),
+        body: JSON.stringify({ input: text }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Analysis failed");
@@ -90,21 +103,65 @@ export default function Home() {
     }
   }
 
+  const showHero = !result && !loading;
+
   return (
     <div className="min-h-screen">
-      <header className="border-b border-hairline">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-baseline justify-between">
-          <div>
-            <h1 className="font-display text-2xl italic">TrustLayer</h1>
-            <p className="text-xs text-ink-soft mt-0.5">Know what to trust before you act.</p>
-          </div>
+      <header className="border-b border-hairline sticky top-0 bg-paper/90 backdrop-blur-sm z-10">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
+          <button
+            onClick={() => {
+              setResult(null);
+              setInput("");
+              setError(null);
+            }}
+            className="flex items-center gap-2.5"
+          >
+            <svg width="20" height="20" viewBox="0 0 32 32" className="shrink-0">
+              <rect width="32" height="32" fill="#14161A" />
+              <rect x="7" y="9" width="18" height="2.4" fill="#F7F7F5" />
+              <rect x="7" y="14.8" width="13" height="2.4" fill="#2D4FFF" />
+              <rect x="7" y="20.6" width="8" height="2.4" fill="#F7F7F5" opacity="0.5" />
+            </svg>
+            <span className="font-display text-lg italic">TrustLayer</span>
+          </button>
+          <span className="hidden sm:block text-xs font-mono text-ink-soft">
+            Evidence-backed. Never fabricated.
+          </span>
         </div>
       </header>
+
+      {showHero && (
+        <section className="border-b border-hairline bg-grid">
+          <div className="max-w-5xl mx-auto px-6 pt-16 pb-14">
+            <span className="text-xs font-mono uppercase tracking-widest text-ink-soft">
+              Trust Verification
+            </span>
+            <h2 className="font-display italic text-4xl sm:text-5xl mt-3 max-w-2xl leading-[1.15]">
+              Know what to trust before you act.
+            </h2>
+            <p className="text-ink-soft mt-5 max-w-xl leading-relaxed">
+              Paste a claim, URL, article, or message. TrustLayer retrieves real
+              evidence, weighs supporting against contradicting sources, and
+              scores what it finds — transparently, or not at all.
+            </p>
+
+            <div className="mt-10 grid sm:grid-cols-3 gap-6 max-w-3xl">
+              {PRINCIPLES.map((p) => (
+                <div key={p.label} className="border-l-2 pl-3" style={{ borderColor: "var(--signal-blue)" }}>
+                  <div className="text-sm font-medium">{p.label}</div>
+                  <div className="text-xs text-ink-soft mt-1 leading-relaxed">{p.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <main className="max-w-5xl mx-auto px-6 py-10">
         <div className="grid lg:grid-cols-[1fr_260px] gap-10">
           <div>
-            <div className="border border-hairline bg-paper-raised p-6">
+            <div className="border border-hairline bg-paper-raised p-6 sm:p-8">
               <label className="text-xs uppercase tracking-widest text-ink-soft font-mono">
                 Claim, URL, article, message, or screenshot text
               </label>
@@ -112,16 +169,31 @@ export default function Home() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Paste what you want to check…"
-                className="w-full mt-3 border border-hairline p-3 text-sm min-h-32 focus:border-ink outline-none bg-transparent font-body"
+                className="w-full mt-3 border border-hairline p-4 text-sm min-h-32 focus:border-ink outline-none bg-transparent font-body leading-relaxed"
               />
-              <div className="flex items-center justify-between mt-4">
-                <span className="text-xs text-ink-soft">
+
+              {showHero && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {EXAMPLES.map((ex) => (
+                    <button
+                      key={ex}
+                      onClick={() => setInput(ex)}
+                      className="text-xs px-3 py-1.5 border border-hairline text-ink-soft hover:border-ink hover:text-ink transition-colors"
+                    >
+                      {ex.length > 44 ? ex.slice(0, 44) + "…" : ex}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between mt-5 gap-4">
+                <span className="text-xs">
                   {error && <span style={{ color: "var(--trust-low)" }}>{error}</span>}
                 </span>
                 <button
-                  onClick={analyze}
+                  onClick={() => analyze()}
                   disabled={loading || !input.trim()}
-                  className="px-6 py-2.5 text-sm font-medium text-paper disabled:opacity-40"
+                  className="shrink-0 px-6 py-2.5 text-sm font-medium text-paper disabled:opacity-40 hover:opacity-90 transition-opacity"
                   style={{ background: "var(--ink)" }}
                 >
                   {loading ? "Analyzing…" : "Analyze Trust"}
