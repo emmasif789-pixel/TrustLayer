@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { tavilySearch } from "@/lib/tavily";
-import { extractClaims, analyzeClaimEvidence, summarizeFindings } from "@/lib/anthropic";
+import { extractClaims, analyzeClaimEvidence, summarizeFindings } from "@/lib/groq";
 import { aggregateClaims } from "@/lib/trustScore";
 import { AnalysisResult, Claim } from "@/lib/types";
 import { randomUUID } from "crypto";

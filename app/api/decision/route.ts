@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assessDecisionRisk } from "@/lib/anthropic";
+import { assessDecisionRisk } from "@/lib/groq";
 import { Claim } from "@/lib/types";
 
 export const maxDuration = 30;

@@ -9,7 +9,7 @@ invented number.
 
 ## How the trust score works
 
-The score is **not** an LLM guess. Claude estimates five sub-scores
+The score is **not** an LLM guess. The model estimates five sub-scores
 (evidence strength, source quality, corroboration, contradiction severity,
 context completeness) tied to specific retrieved sources. The app then
 computes the final 0-100 score with a fixed, documented weighted formula
@@ -20,7 +20,7 @@ score.
 ## Stack
 
 - Next.js 15 (App Router) + TypeScript + Tailwind v4
-- Claude (`@anthropic-ai/sdk`) - claim extraction, evidence classification, reasoning
+- Groq (Llama 3.3 70B via OpenAI-compatible API) - claim extraction, evidence classification, reasoning
 - Tavily - real web search for evidence retrieval
 - Supabase (Postgres) - analysis history (optional for local dev)
 
@@ -29,13 +29,13 @@ score.
 1. Install dependencies: `npm install`
 
 2. Get API keys:
-   - Anthropic: https://console.anthropic.com (API key)
+   - Groq: https://console.groq.com (free API key)
    - Tavily: https://tavily.com (free tier, 1000 searches/month, no card required)
    - Supabase (optional): https://supabase.com - create a project, then run
      `supabase/schema.sql` in the SQL editor to create the `analyses` table.
 
 3. Configure environment: `cp .env.example .env.local` and fill in
-   `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, and (optionally) the two
+   `GROQ_API_KEY`, `TAVILY_API_KEY`, and (optionally) the two
    `NEXT_PUBLIC_SUPABASE_*` values.
 
 4. Run locally: `npm run dev`
@@ -62,7 +62,7 @@ app/api/analyze/route.ts   -> orchestrates: extract claims -> search each
                                -> aggregate deterministic trust score
 app/api/decision/route.ts  -> Decision Mode: risk assessment reusing
                                already-retrieved evidence
-lib/anthropic.ts           -> Claude calls, forced structured JSON output
+lib/groq.ts                 -> Groq calls, forced structured JSON output (tool calling)
 lib/tavily.ts               -> web search client
 lib/trustScore.ts           -> the actual scoring math (documented, fixed weights)
 components/                 -> TrustScoreGauge, EvidenceMap, DecisionMode, HistorySidebar
