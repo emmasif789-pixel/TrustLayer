@@ -20,6 +20,53 @@ async function callGroqTool<T>(
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error("GROQ_API_KEY is not set");
 
+  // Attempt 1 & 2: forced tool call. gpt-oss-120b on Groq sometimes ignores
+  // tool_choice and writes free text instead (documented Groq issue) — retry once.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: "user", content: userContent }],
+        tools: [tool],
+        tool_choice: { type: "function", function: { name: tool.function.name } },
+        temperature: 0.2,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const call = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (call) {
+        try {
+          return JSON.parse(call.function.arguments) as T;
+        } catch {
+          // fall through to next attempt / fallback
+        }
+      }
+    } else {
+      const text = await res.text();
+      const isToolFailure = res.status === 400 && text.includes("tool_use_failed");
+      if (!isToolFailure) {
+        throw new Error(`Groq request failed (${res.status}): ${text}`);
+      }
+      // tool_use_failed — retry once, then fall back to plain JSON prompting
+    }
+  }
+
+  // Fallback: plain JSON-mode prompt, no forced tool call.
+  return callGroqJsonFallback<T>(userContent, tool, apiKey);
+}
+
+async function callGroqJsonFallback<T>(
+  userContent: string,
+  tool: OpenAITool,
+  apiKey: string
+): Promise<T | null> {
   const res = await fetch(GROQ_URL, {
     method: "POST",
     headers: {
@@ -28,9 +75,15 @@ async function callGroqTool<T>(
     },
     body: JSON.stringify({
       model: MODEL,
-      messages: [{ role: "user", content: userContent }],
-      tools: [tool],
-      tool_choice: { type: "function", function: { name: tool.function.name } },
+      messages: [
+        {
+          role: "user",
+          content: `${userContent}\n\nRespond with ONLY a single valid JSON object, no other text, no markdown code fences, matching exactly this schema:\n${JSON.stringify(
+            tool.function.parameters
+          )}`,
+        },
+      ],
+      response_format: { type: "json_object" },
       temperature: 0.2,
     }),
   });
@@ -41,11 +94,12 @@ async function callGroqTool<T>(
   }
 
   const data = await res.json();
-  const call = data.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call) return null;
+  const content: string | undefined = data.choices?.[0]?.message?.content;
+  if (!content) return null;
 
+  const cleaned = content.trim().replace(/^```json\s*/i, "").replace(/```$/, "");
   try {
-    return JSON.parse(call.function.arguments) as T;
+    return JSON.parse(cleaned) as T;
   } catch {
     return null;
   }
