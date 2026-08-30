@@ -5,7 +5,7 @@ import { aggregateClaims } from "@/lib/trustScore";
 import { AnalysisResult, Claim } from "@/lib/types";
 import { randomUUID } from "crypto";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 function detectInputType(input: string): "url" | "text" | "claim" {
   try {
@@ -31,20 +31,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not extract a checkable claim from this input." }, { status: 422 });
     }
 
-    // 2. Retrieve + analyze evidence per claim, in parallel
-    const claimResults = await Promise.all(
-      extracted.map(async (c) => {
-        const rawResults = await tavilySearch(c.searchQuery, { maxResults: 6 });
-        const analysis = await analyzeClaimEvidence(c.text, rawResults);
-        const claim: Claim = {
-          id: randomUUID(),
-          text: c.text,
-          sources: analysis.sources,
-          missingEvidenceNotes: analysis.missingEvidenceNotes,
-        };
-        return { claim, subScores: analysis.subScores, hasSufficientEvidence: analysis.hasSufficientEvidence };
-      })
-    );
+    // 2. Retrieve + analyze evidence per claim, sequentially.
+    // Groq's free tier is capped at 8000 tokens/minute shared across all
+    // calls — running claims in parallel bursts past that immediately.
+    const claimResults = [];
+    for (const c of extracted) {
+      const rawResults = await tavilySearch(c.searchQuery, { maxResults: 5 });
+      const analysis = await analyzeClaimEvidence(c.text, rawResults);
+      const claim: Claim = {
+        id: randomUUID(),
+        text: c.text,
+        sources: analysis.sources,
+        missingEvidenceNotes: analysis.missingEvidenceNotes,
+      };
+      claimResults.push({ claim, subScores: analysis.subScores, hasSufficientEvidence: analysis.hasSufficientEvidence });
+    }
 
     const claims = claimResults.map((r) => r.claim);
     const trust = aggregateClaims(

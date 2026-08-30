@@ -13,29 +13,65 @@ interface OpenAITool {
   };
 }
 
-async function callGroqTool<T>(
-  userContent: string,
-  tool: OpenAITool
-): Promise<T | null> {
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseRetryDelayMs(errorText: string): number {
+  const match = errorText.match(/try again in ([\d.]+)s/i);
+  if (match) return Math.ceil(parseFloat(match[1]) * 1000) + 500;
+  return 5000;
+}
+
+/**
+ * Groq's free tier caps at 8000 tokens/minute across all requests. Under
+ * load this pipeline will hit 429s — wait out the model-reported delay
+ * and retry rather than failing the whole analysis.
+ */
+async function groqFetch(body: Record<string, unknown>): Promise<Response> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error("GROQ_API_KEY is not set");
 
-  // Attempt 1 & 2: forced tool call. gpt-oss-120b on Groq sometimes ignores
-  // tool_choice and writes free text instead (documented Groq issue) — retry once.
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(GROQ_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [{ role: "user", content: userContent }],
-        tools: [tool],
-        tool_choice: { type: "function", function: { name: tool.function.name } },
-        temperature: 0.2,
-      }),
+      body: JSON.stringify(body),
+    });
+
+    if (res.status === 429) {
+      const text = await res.text();
+      if (attempt === 2) {
+        throw new Error(
+          `Groq rate limit reached and retries exhausted. Free tier is 8000 tokens/minute — wait a moment and try again, or upgrade at console.groq.com/settings/billing. (${text})`
+        );
+      }
+      await sleep(parseRetryDelayMs(text));
+      continue;
+    }
+
+    return res;
+  }
+
+  throw new Error("Groq request failed after retries.");
+}
+
+async function callGroqTool<T>(
+  userContent: string,
+  tool: OpenAITool
+): Promise<T | null> {
+  // Attempt 1 & 2: forced tool call. gpt-oss-120b on Groq sometimes ignores
+  // tool_choice and writes free text instead (documented Groq issue) — retry once.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await groqFetch({
+      model: MODEL,
+      messages: [{ role: "user", content: userContent }],
+      tools: [tool],
+      tool_choice: { type: "function", function: { name: tool.function.name } },
+      temperature: 0.2,
     });
 
     if (res.ok) {
@@ -59,33 +95,25 @@ async function callGroqTool<T>(
   }
 
   // Fallback: plain JSON-mode prompt, no forced tool call.
-  return callGroqJsonFallback<T>(userContent, tool, apiKey);
+  return callGroqJsonFallback<T>(userContent, tool);
 }
 
 async function callGroqJsonFallback<T>(
   userContent: string,
-  tool: OpenAITool,
-  apiKey: string
+  tool: OpenAITool
 ): Promise<T | null> {
-  const res = await fetch(GROQ_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        {
-          role: "user",
-          content: `${userContent}\n\nRespond with ONLY a single valid JSON object, no other text, no markdown code fences, matching exactly this schema:\n${JSON.stringify(
-            tool.function.parameters
-          )}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    }),
+  const res = await groqFetch({
+    model: MODEL,
+    messages: [
+      {
+        role: "user",
+        content: `${userContent}\n\nRespond with ONLY a single valid JSON object, no other text, no markdown code fences, matching exactly this schema:\n${JSON.stringify(
+          tool.function.parameters
+        )}`,
+      },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.2,
   });
 
   if (!res.ok) {
@@ -117,7 +145,7 @@ const extractTool: OpenAITool = {
       properties: {
         claims: {
           type: "array",
-          maxItems: 4,
+          maxItems: 3,
           items: {
             type: "object",
             properties: {
@@ -200,7 +228,7 @@ export async function analyzeClaimEvidence(
     sourceId: `s${i}`,
     url: r.url,
     title: r.title,
-    content: r.content.slice(0, 1200),
+    content: r.content.slice(0, 700),
     publishedDate: r.published_date,
   }));
 
