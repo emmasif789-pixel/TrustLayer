@@ -3,11 +3,26 @@
 import { useEffect, useState } from "react";
 import TrustScoreGauge from "@/components/TrustScoreGauge";
 import EvidenceMap from "@/components/EvidenceMap";
+import SourceCard from "@/components/SourceCard";
 import DecisionMode from "@/components/DecisionMode";
 import HistorySidebar from "@/components/HistorySidebar";
 import ThemeToggle from "@/components/ThemeToggle";
-import { AnalysisResult } from "@/lib/types";
+import { AnalysisResult, Claim, EvidenceSource } from "@/lib/types";
 import { supabase, getDeviceId } from "@/lib/supabase";
+
+/**
+ * Surface the single most decision-relevant piece of evidence from the
+ * primary claim: a contradicting source first (if the picture is disputed,
+ * that's what a reader needs to see immediately), then a supporting one.
+ * Pure derivation from data already returned by /api/analyze.
+ */
+function pickStrongestEvidence(claims: Claim[]): EvidenceSource[] {
+  const primary = claims[0];
+  if (!primary) return [];
+  const contradicting = primary.sources.find((s) => s.stance === "contradicts");
+  const supporting = primary.sources.find((s) => s.stance === "supports");
+  return [contradicting, supporting].filter((s): s is EvidenceSource => Boolean(s));
+}
 
 const LOADING_STAGES = [
   "Extracting claims…",
@@ -105,6 +120,7 @@ export default function Home() {
   }
 
   const showHero = !result && !loading;
+  const strongestEvidence = result ? pickStrongestEvidence(result.claims) : [];
 
   return (
     <div className="min-h-screen">
@@ -224,14 +240,33 @@ export default function Home() {
               <div className="mt-8 space-y-10 animate-fade-up">
                 <TrustScoreGauge trust={result.trust} />
 
-                <div className="grid sm:grid-cols-3 gap-6">
+                {strongestEvidence.length > 0 && (
+                  <div>
+                    <h2 className="font-display text-lg italic mb-4">Strongest Evidence</h2>
+                    <div className="border border-hairline">
+                      {strongestEvidence.map((source) => (
+                        <SourceCard key={source.id} source={source} defaultOpen />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid sm:grid-cols-2 gap-6">
                   <SummaryList title="What we know" items={result.whatWeKnow} />
-                  <SummaryList title="What we don't know" items={result.whatWeDontKnow} />
-                  <SummaryList title="Missing context" items={result.missingContext} />
+                  <UncertaintyList
+                    dontKnow={result.whatWeDontKnow}
+                    missingContext={result.missingContext}
+                  />
                 </div>
 
                 <div>
-                  <h2 className="font-display text-lg italic mb-4">Evidence Map</h2>
+                  <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
+                    <h2 className="font-display text-lg italic">Full Evidence</h2>
+                    <span className="text-xs font-mono text-ink-soft">
+                      {result.claims.reduce((n, c) => n + c.sources.length, 0)} sources across{" "}
+                      {result.claims.length} claim{result.claims.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
                   <EvidenceMap claims={result.claims} />
                 </div>
 
@@ -252,14 +287,58 @@ export default function Home() {
 
 function SummaryList({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="border border-hairline p-4">
-      <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-2">{title}</div>
+    <div className="border border-hairline p-5">
+      <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-3">{title}</div>
       {items.length === 0 ? (
         <p className="text-sm text-ink-soft">None noted.</p>
       ) : (
-        <ul className="space-y-1.5">
+        <ul className="space-y-2">
           {items.map((item, i) => (
-            <li key={i} className="text-sm flex gap-2">
+            <li key={i} className="text-sm flex gap-2 leading-relaxed">
+              <span className="text-ink-soft">–</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function UncertaintyList({
+  dontKnow,
+  missingContext,
+}: {
+  dontKnow: string[];
+  missingContext: string[];
+}) {
+  return (
+    <div className="border border-hairline p-5" style={{ borderColor: "var(--trust-mid)" }}>
+      <div className="text-xs uppercase tracking-widest font-mono mb-3" style={{ color: "var(--trust-mid)" }}>
+        Uncertainty
+      </div>
+
+      <div className="text-xs font-medium text-ink-soft mb-1.5">What we don&apos;t know</div>
+      {dontKnow.length === 0 ? (
+        <p className="text-sm text-ink-soft mb-4">None noted.</p>
+      ) : (
+        <ul className="space-y-2 mb-4">
+          {dontKnow.map((item, i) => (
+            <li key={i} className="text-sm flex gap-2 leading-relaxed">
+              <span className="text-ink-soft">–</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="text-xs font-medium text-ink-soft mb-1.5">Missing context</div>
+      {missingContext.length === 0 ? (
+        <p className="text-sm text-ink-soft">None noted.</p>
+      ) : (
+        <ul className="space-y-2">
+          {missingContext.map((item, i) => (
+            <li key={i} className="text-sm flex gap-2 leading-relaxed">
               <span className="text-ink-soft">–</span>
               <span>{item}</span>
             </li>
