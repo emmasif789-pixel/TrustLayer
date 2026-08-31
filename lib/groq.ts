@@ -1,5 +1,6 @@
 import { EvidenceSource, Claim, TrustSubScores, DecisionModeResult } from "./types";
 import { TavilyResult, domainFromUrl } from "./tavily";
+import { classifyDomain } from "./domainReputation";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
@@ -224,13 +225,18 @@ export async function analyzeClaimEvidence(
   subScores: TrustSubScores;
   hasSufficientEvidence: boolean;
 }> {
-  const sourcesForPrompt = rawResults.map((r, i) => ({
-    sourceId: `s${i}`,
-    url: r.url,
-    title: r.title,
-    content: r.content.slice(0, 700),
-    publishedDate: r.published_date,
-  }));
+  const sourcesForPrompt = rawResults.map((r, i) => {
+    const reputation = classifyDomain(r.url);
+    return {
+      sourceId: `s${i}`,
+      url: r.url,
+      title: r.title,
+      content: r.content.slice(0, 700),
+      publishedDate: r.published_date,
+      knownReputationTier: reputation.tier,
+      knownReputationNote: reputation.description,
+    };
+  });
 
   const result = await callGroqTool<{
     sources: { sourceId: string; stance: EvidenceSource["stance"]; supportsWhat: string; reliabilityNote: string }[];
@@ -238,7 +244,7 @@ export async function analyzeClaimEvidence(
     subScores: TrustSubScores;
     hasSufficientEvidence: boolean;
   }>(
-    `Claim to evaluate: "${claimText}"\n\nRetrieved sources (real web search results — do not invent anything beyond what's here):\n${JSON.stringify(
+    `Claim to evaluate: "${claimText}"\n\nRetrieved sources (real web search results — do not invent anything beyond what's here). Each source includes "knownReputationTier"/"knownReputationNote" from a curated domain-reputation dataset — this is ground truth about the publisher, not your own judgment. Use it directly when writing reliabilityNote and when scoring sourceQuality; do not contradict it based on how a source "feels."\n\n${JSON.stringify(
       sourcesForPrompt,
       null,
       2
@@ -274,10 +280,22 @@ export async function analyzeClaimEvidence(
     })
     .filter((s): s is EvidenceSource => s !== null && s.stance !== "irrelevant");
 
+  // sourceQuality is blended, not a pure LLM guess: half the model's contextual
+  // judgment, half a deterministic average of the curated domain-reputation
+  // baselines for the sources actually used. Keeps the number honest even if
+  // the model is generous.
+  const relevantForReputation = sources.filter((s) => s.stance !== "insufficient");
+  const reputationScores = relevantForReputation.map((s) => classifyDomain(s.url).baseline);
+  const deterministicQuality =
+    reputationScores.length > 0
+      ? reputationScores.reduce((a, b) => a + b, 0) / reputationScores.length
+      : result.subScores.sourceQuality;
+  const blendedSourceQuality = Math.round(result.subScores.sourceQuality * 0.5 + deterministicQuality * 0.5);
+
   return {
     sources,
     missingEvidenceNotes: result.missingEvidenceNotes ?? [],
-    subScores: result.subScores,
+    subScores: { ...result.subScores, sourceQuality: blendedSourceQuality },
     hasSufficientEvidence: result.hasSufficientEvidence,
   };
 }

@@ -26,3 +26,26 @@ create policy "device can insert own analyses"
 create policy "device can read own analyses"
   on analyses for select
   using (true);
+
+-- Cache: identical inputs shouldn't re-run the full Groq + Tavily pipeline.
+-- Keyed by a hash of the normalized input text, shared across all users.
+create table if not exists analysis_cache (
+  cache_key text primary key,
+  input_raw text not null,
+  result jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+alter table analysis_cache enable row level security;
+
+create policy "anyone can read cache"
+  on analysis_cache for select
+  using (true);
+
+create policy "anyone can write cache"
+  on analysis_cache for insert
+  with check (true);
+
+create policy "anyone can update cache"
+  on analysis_cache for update
+  using (true);

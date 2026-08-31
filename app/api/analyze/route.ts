@@ -3,6 +3,7 @@ import { tavilySearch } from "@/lib/tavily";
 import { extractClaims, analyzeClaimEvidence, summarizeFindings } from "@/lib/groq";
 import { aggregateClaims } from "@/lib/trustScore";
 import { AnalysisResult, Claim } from "@/lib/types";
+import { getCachedAnalysis, setCachedAnalysis } from "@/lib/cache";
 import { randomUUID } from "crypto";
 
 export const maxDuration = 120;
@@ -24,6 +25,12 @@ export async function POST(req: NextRequest) {
     }
 
     const inputType = detectInputType(input);
+
+    // Identical input, still-fresh result — skip the whole pipeline.
+    const cached = await getCachedAnalysis(input);
+    if (cached) {
+      return NextResponse.json({ ...cached, id: randomUUID(), fromCache: true });
+    }
 
     // 1. Extract claims + search queries
     const extracted = await extractClaims(input);
@@ -66,6 +73,8 @@ export async function POST(req: NextRequest) {
       missingContext,
       createdAt: new Date().toISOString(),
     };
+
+    await setCachedAnalysis(input, result);
 
     return NextResponse.json(result);
   } catch (err) {

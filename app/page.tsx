@@ -49,6 +49,8 @@ export default function Home() {
   const [stage, setStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<
     { id: string; input_raw: string; overall_score: number; verdict_label: string; created_at: string }[]
   >([]);
@@ -82,6 +84,7 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setShareId(null);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -94,14 +97,19 @@ export default function Home() {
 
       if (supabase) {
         const deviceId = getDeviceId();
-        await supabase.from("analyses").insert({
-          device_id: deviceId,
-          input_type: data.inputType,
-          input_raw: data.inputRaw,
-          overall_score: data.trust.overallScore,
-          verdict_label: data.trust.verdictLabel,
-          result: data,
-        });
+        const { data: row } = await supabase
+          .from("analyses")
+          .insert({
+            device_id: deviceId,
+            input_type: data.inputType,
+            input_raw: data.inputRaw,
+            overall_score: data.trust.overallScore,
+            verdict_label: data.trust.verdictLabel,
+            result: data,
+          })
+          .select("id")
+          .single();
+        if (row?.id) setShareId(row.id);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
@@ -116,7 +124,16 @@ export default function Home() {
     if (data?.result) {
       setResult(data.result as AnalysisResult);
       setInput((data.result as AnalysisResult).inputRaw);
+      setShareId(id);
     }
+  }
+
+  async function copyShareLink() {
+    if (!shareId) return;
+    const url = `${window.location.origin}/analysis/${shareId}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   const showHero = !result && !loading;
@@ -238,6 +255,24 @@ export default function Home() {
 
             {result && !loading && (
               <div className="mt-8 space-y-10 animate-fade-up">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  {result.fromCache ? (
+                    <span className="text-xs font-mono text-ink-soft">
+                      ⚡ Instant result — matches a check from the last 24h
+                    </span>
+                  ) : (
+                    <span />
+                  )}
+                  {shareId && (
+                    <button
+                      onClick={copyShareLink}
+                      className="text-xs font-mono px-3 py-1.5 border border-hairline hover:border-ink transition-colors"
+                    >
+                      {copied ? "Link copied ✓" : "Share this result ↗"}
+                    </button>
+                  )}
+                </div>
+
                 <TrustScoreGauge trust={result.trust} />
 
                 {strongestEvidence.length > 0 && (

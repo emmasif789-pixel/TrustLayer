@@ -43,6 +43,24 @@ score.
 5. Deploy: push to GitHub, import into Vercel, add the same env vars in
    Vercel project settings. No other config needed.
 
+## Additional features
+
+- **Source quality grounding**: sourceQuality is no longer a pure LLM guess.
+  `lib/domainReputation.ts` is a small curated dataset (wire services,
+  gov/edu, major outlets, aggregators, social media, known-unreliable
+  domains). Each source's tier is passed to the model as ground truth, and
+  the final score blends the model's contextual judgment 50/50 with the
+  deterministic domain baseline.
+- **Shareable results**: every analysis gets a public read-only page at
+  `/analysis/[id]`, with a dynamically generated Open Graph image showing
+  the verdict and score — so links posted to social/Slack/etc. render a
+  real preview card, not a bare URL. Requires Supabase (the share ID is the
+  `analyses` table row id).
+- **Result caching**: identical inputs (normalized, case-insensitive) skip
+  the full Groq + Tavily pipeline for 24h and return instantly from the
+  `analysis_cache` table. Also protects the Groq free-tier rate limit from
+  duplicate work.
+
 ## What's real vs. what's MVP-scoped
 
 - Evidence, sources, and scores are always real - retrieved live from

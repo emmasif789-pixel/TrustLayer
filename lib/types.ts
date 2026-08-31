@@ -44,6 +44,7 @@ export interface AnalysisResult {
   whatWeDontKnow: string[];
   missingContext: string[];
   createdAt: string;
+  fromCache?: boolean;
 }
 
 export type DecisionRisk = "HIGH" | "MEDIUM" | "LOW";
