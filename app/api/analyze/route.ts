@@ -4,6 +4,7 @@ import { extractClaims, analyzeClaimEvidence, summarizeFindings } from "@/lib/gr
 import { aggregateClaims } from "@/lib/trustScore";
 import { AnalysisResult, Claim } from "@/lib/types";
 import { getCachedAnalysis, setCachedAnalysis } from "@/lib/cache";
+import { fetchArticleContent } from "@/lib/urlFetch";
 import { randomUUID } from "crypto";
 
 export const maxDuration = 120;
@@ -32,8 +33,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ...cached, id: randomUUID(), fromCache: true });
     }
 
-    // 1. Extract claims + search queries
-    const extracted = await extractClaims(input);
+    // 1. Extract claims + search queries. For URL input, fetch the real
+    // article text first — claims should come from what's actually
+    // written, not a guess based on the link/title alone.
+    let extractionSource = input;
+    let articleFetchFailed = false;
+    if (inputType === "url") {
+      const article = await fetchArticleContent(input.trim());
+      if (article) {
+        extractionSource = `Article title: ${article.title}\n\nArticle content:\n${article.text}`;
+      } else {
+        articleFetchFailed = true;
+      }
+    }
+
+    const extracted = await extractClaims(extractionSource);
     if (extracted.length === 0) {
       return NextResponse.json({ error: "Could not extract a checkable claim from this input." }, { status: 422 });
     }
@@ -61,6 +75,11 @@ export async function POST(req: NextRequest) {
 
     // 3. Overall summary
     const { whatWeKnow, whatWeDontKnow, missingContext } = await summarizeFindings(claims);
+    if (articleFetchFailed) {
+      missingContext.unshift(
+        "Could not fetch the full article text from this URL (paywall, blocked, or requires JavaScript) — claims were inferred from the link and title only."
+      );
+    }
 
     const result: AnalysisResult = {
       id: randomUUID(),
