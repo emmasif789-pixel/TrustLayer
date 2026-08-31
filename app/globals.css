@@ -31,6 +31,22 @@
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
+html.dark {
+  --paper: #0B0C0E;
+  --paper-raised: #16181C;
+  --ink: #F2F2EF;
+  --ink-soft: #9A9DA6;
+  --hairline: #2A2C31;
+  --signal-blue: #6C86FF;
+  --trust-high: #34C87F;
+  --trust-mid: #E3B94A;
+  --trust-low: #E2594F;
+}
+
+html {
+  transition: background-color 0.25s ease;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -62,6 +78,34 @@ body {
 .bg-grid {
   background-image: radial-gradient(circle, var(--hairline) 1px, transparent 1px);
   background-size: 22px 22px;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-up-1 { animation-delay: 0.05s; }
+.animate-fade-up-2 { animation-delay: 0.1s; }
+.animate-fade-up-3 { animation-delay: 0.15s; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
 }
 
 /* visible keyboard focus everywhere */

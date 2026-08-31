@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { TrustBreakdown } from "@/lib/types";
 
 function verdictColor(label: TrustBreakdown["verdictLabel"]): string {
@@ -24,6 +27,34 @@ const subScoreLabels: { key: keyof TrustBreakdown["subScores"]; label: string; i
 
 export default function TrustScoreGauge({ trust }: { trust: TrustBreakdown }) {
   const color = verdictColor(trust.verdictLabel);
+  const [displayScore, setDisplayScore] = useState(0);
+  const [barsIn, setBarsIn] = useState(false);
+
+  useEffect(() => {
+    const target = trust.overallScore;
+    const duration = 700;
+    let raf: number;
+
+    function start(startTime: number) {
+      setDisplayScore(0);
+      setBarsIn(false);
+
+      function tick(now: number) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setDisplayScore(Math.round(eased * target));
+        if (progress < 1) {
+          raf = requestAnimationFrame(tick);
+        } else {
+          setBarsIn(true);
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    raf = requestAnimationFrame(start);
+    return () => cancelAnimationFrame(raf);
+  }, [trust.overallScore]);
 
   return (
     <div className="border border-hairline bg-paper-raised p-8">
@@ -32,7 +63,7 @@ export default function TrustScoreGauge({ trust }: { trust: TrustBreakdown }) {
           <div className="text-xs uppercase tracking-widest text-ink-soft font-mono">Trust Score</div>
           <div className="flex items-baseline gap-3 mt-1">
             <span className="font-mono text-6xl font-medium" style={{ color }}>
-              {trust.overallScore}
+              {displayScore}
             </span>
             <span className="font-mono text-xl text-ink-soft">/100</span>
           </div>
@@ -55,7 +86,10 @@ export default function TrustScoreGauge({ trust }: { trust: TrustBreakdown }) {
             <div key={key} className="grid grid-cols-[160px_1fr_44px] items-center gap-3">
               <span className="text-xs text-ink-soft font-body">{label}</span>
               <div className="h-1.5 bg-hairline">
-                <div className="h-full" style={{ width: `${value}%`, background: barColor }} />
+                <div
+                  className="h-full transition-all duration-700 ease-out"
+                  style={{ width: barsIn ? `${value}%` : "0%", background: barColor }}
+                />
               </div>
               <span className="text-xs font-mono text-right">{Math.round(value)}</span>
             </div>

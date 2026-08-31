@@ -5,6 +5,7 @@ import TrustScoreGauge from "@/components/TrustScoreGauge";
 import EvidenceMap from "@/components/EvidenceMap";
 import DecisionMode from "@/components/DecisionMode";
 import HistorySidebar from "@/components/HistorySidebar";
+import ThemeToggle from "@/components/ThemeToggle";
 import { AnalysisResult } from "@/lib/types";
 import { supabase, getDeviceId } from "@/lib/supabase";
 
@@ -118,35 +119,38 @@ export default function Home() {
             className="flex items-center gap-2.5"
           >
             <svg width="20" height="20" viewBox="0 0 32 32" className="shrink-0">
-              <rect width="32" height="32" fill="#14161A" />
-              <rect x="7" y="9" width="18" height="2.4" fill="#F7F7F5" />
-              <rect x="7" y="14.8" width="13" height="2.4" fill="#2D4FFF" />
-              <rect x="7" y="20.6" width="8" height="2.4" fill="#F7F7F5" opacity="0.5" />
+              <rect width="32" height="32" style={{ fill: "var(--ink)" }} />
+              <rect x="7" y="9" width="18" height="2.4" style={{ fill: "var(--paper)" }} />
+              <rect x="7" y="14.8" width="13" height="2.4" style={{ fill: "var(--signal-blue)" }} className="animate-pulse-dot" />
+              <rect x="7" y="20.6" width="8" height="2.4" style={{ fill: "var(--paper)" }} opacity="0.5" />
             </svg>
             <span className="font-display text-lg italic">TrustLayer</span>
           </button>
-          <span className="hidden sm:block text-xs font-mono text-ink-soft">
-            Evidence-backed. Never fabricated.
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:block text-xs font-mono text-ink-soft">
+              Evidence-backed. Never fabricated.
+            </span>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
       {showHero && (
         <section className="border-b border-hairline bg-grid">
           <div className="max-w-5xl mx-auto px-6 pt-16 pb-14">
-            <span className="text-xs font-mono uppercase tracking-widest text-ink-soft">
+            <span className="text-xs font-mono uppercase tracking-widest text-ink-soft animate-fade-up">
               Trust Verification
             </span>
-            <h2 className="font-display italic text-4xl sm:text-5xl mt-3 max-w-2xl leading-[1.15]">
+            <h2 className="font-display italic text-4xl sm:text-5xl mt-3 max-w-2xl leading-[1.15] animate-fade-up animate-fade-up-1">
               Know what to trust before you act.
             </h2>
-            <p className="text-ink-soft mt-5 max-w-xl leading-relaxed">
+            <p className="text-ink-soft mt-5 max-w-xl leading-relaxed animate-fade-up animate-fade-up-2">
               Paste a claim, URL, article, or message. TrustLayer retrieves real
               evidence, weighs supporting against contradicting sources, and
               scores what it finds — transparently, or not at all.
             </p>
 
-            <div className="mt-10 grid sm:grid-cols-3 gap-6 max-w-3xl">
+            <div className="mt-10 grid sm:grid-cols-3 gap-6 max-w-3xl animate-fade-up animate-fade-up-3">
               {PRINCIPLES.map((p) => (
                 <div key={p.label} className="border-l-2 pl-3" style={{ borderColor: "var(--signal-blue)" }}>
                   <div className="text-sm font-medium">{p.label}</div>
@@ -217,7 +221,7 @@ export default function Home() {
             )}
 
             {result && !loading && (
-              <div className="mt-8 space-y-10">
+              <div className="mt-8 space-y-10 animate-fade-up">
                 <TrustScoreGauge trust={result.trust} />
 
                 <div className="grid sm:grid-cols-3 gap-6">
