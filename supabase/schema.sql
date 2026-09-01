@@ -49,3 +49,24 @@ create policy "anyone can write cache"
 create policy "anyone can update cache"
   on analysis_cache for update
   using (true);
+
+-- Basic abuse protection: cap requests per IP in a rolling window.
+create table if not exists rate_limits (
+  identifier text primary key,
+  window_start timestamptz not null,
+  count int not null default 1
+);
+
+alter table rate_limits enable row level security;
+
+create policy "anyone can read rate limits"
+  on rate_limits for select
+  using (true);
+
+create policy "anyone can write rate limits"
+  on rate_limits for insert
+  with check (true);
+
+create policy "anyone can update rate limits"
+  on rate_limits for update
+  using (true);

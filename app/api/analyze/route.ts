@@ -5,6 +5,7 @@ import { aggregateClaims } from "@/lib/trustScore";
 import { AnalysisResult, Claim } from "@/lib/types";
 import { getCachedAnalysis, setCachedAnalysis } from "@/lib/cache";
 import { fetchArticleContent } from "@/lib/urlFetch";
+import { checkRateLimit, getClientIdentifier } from "@/lib/rateLimit";
 import { randomUUID } from "crypto";
 
 export const maxDuration = 120;
@@ -23,6 +24,19 @@ export async function POST(req: NextRequest) {
     const { input } = await req.json();
     if (!input || typeof input !== "string" || input.trim().length < 3) {
       return NextResponse.json({ error: "Provide a claim, URL, or text to analyze." }, { status: 400 });
+    }
+
+    const identifier = getClientIdentifier(req.headers);
+    const rateLimit = await checkRateLimit(identifier);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many analyses from this connection. Try again in about ${Math.ceil(
+            (rateLimit.retryAfterSeconds ?? 60) / 60
+          )} minute(s).`,
+        },
+        { status: 429 }
+      );
     }
 
     const inputType = detectInputType(input);
