@@ -7,6 +7,7 @@ import SourceCard from "@/components/SourceCard";
 import DecisionMode from "@/components/DecisionMode";
 import HistorySidebar from "@/components/HistorySidebar";
 import ThemeToggle from "@/components/ThemeToggle";
+import Link from "next/link";
 import { AnalysisResult, Claim, EvidenceSource } from "@/lib/types";
 import { supabase, getDeviceId } from "@/lib/supabase";
 
@@ -167,6 +168,13 @@ export default function Home() {
             <span className="font-display text-lg italic">TrustLayer</span>
           </button>
           <div className="flex items-center gap-4">
+            <Link
+              href="/trending"
+              className="text-xs font-mono px-3 py-1.5 rounded-full text-ink-soft hover:text-ink transition-colors"
+              style={{ background: "var(--hairline-soft)" }}
+            >
+              Trending
+            </Link>
             <span className="hidden sm:block text-xs font-mono text-ink-soft">
               Evidence-backed. Never fabricated.
             </span>
