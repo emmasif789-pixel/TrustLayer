@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TrustScoreGauge from "@/components/TrustScoreGauge";
 import EvidenceMap from "@/components/EvidenceMap";
 import SourceCard from "@/components/SourceCard";
@@ -51,6 +51,7 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [shareId, setShareId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const verdictRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<
     { id: string; input_raw: string; overall_score: number; verdict_label: string; created_at: string }[]
   >([]);
@@ -76,6 +77,12 @@ export default function Home() {
     }, 2200);
     return () => clearInterval(interval);
   }, [loading]);
+
+  useEffect(() => {
+    if (result && verdictRef.current) {
+      verdictRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [result]);
 
   async function analyze(overrideInput?: string) {
     const text = overrideInput ?? input;
@@ -291,7 +298,7 @@ export default function Home() {
             )}
 
             {result && !loading && (
-              <div className="mt-8 animate-fade-up">
+              <div ref={verdictRef} className="mt-8 animate-fade-up scroll-mt-24">
                 {(result.fromCache || shareId) && (
                   <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
                     {result.fromCache ? (
