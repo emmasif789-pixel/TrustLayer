@@ -141,8 +141,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-hairline sticky top-0 bg-paper/90 backdrop-blur-sm z-10">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
+      <header className="sticky top-0 bg-paper/80 backdrop-blur-md z-10" style={{ borderBottom: "1px solid var(--hairline-soft)" }}>
+        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
           <button
             onClick={() => {
               setResult(null);
@@ -152,10 +152,10 @@ export default function Home() {
             className="flex items-center gap-2.5"
           >
             <svg width="20" height="20" viewBox="0 0 32 32" className="shrink-0">
-              <rect width="32" height="32" style={{ fill: "var(--ink)" }} />
-              <rect x="7" y="9" width="18" height="2.4" style={{ fill: "var(--paper)" }} />
-              <rect x="7" y="14.8" width="13" height="2.4" style={{ fill: "var(--signal-blue)" }} className="animate-pulse-dot" />
-              <rect x="7" y="20.6" width="8" height="2.4" style={{ fill: "var(--paper)" }} opacity="0.5" />
+              <rect width="32" height="32" rx="8" style={{ fill: "var(--ink)" }} />
+              <rect x="7" y="9" width="18" height="2.4" rx="1.2" style={{ fill: "var(--paper)" }} />
+              <rect x="7" y="14.8" width="13" height="2.4" rx="1.2" style={{ fill: "var(--signal-blue)" }} className="animate-pulse-dot" />
+              <rect x="7" y="20.6" width="8" height="2.4" rx="1.2" style={{ fill: "var(--paper)" }} opacity="0.5" />
             </svg>
             <span className="font-display text-lg italic">TrustLayer</span>
           </button>
@@ -169,25 +169,27 @@ export default function Home() {
       </header>
 
       {showHero && (
-        <section className="border-b border-hairline bg-grid">
-          <div className="max-w-5xl mx-auto px-6 pt-16 pb-14">
-            <span className="text-xs font-mono uppercase tracking-widest text-ink-soft animate-fade-up">
+        <section className="bg-grid">
+          <div className="max-w-4xl mx-auto px-6 pt-24 pb-20 text-center">
+            <span className="text-xs font-mono uppercase tracking-[0.2em] text-ink-soft animate-fade-up">
               Trust Verification
             </span>
-            <h2 className="font-display italic text-4xl sm:text-5xl mt-3 max-w-2xl leading-[1.15] animate-fade-up animate-fade-up-1">
-              Know what to trust before you act.
+            <h2 className="font-display italic text-5xl sm:text-6xl mt-5 leading-[1.1] animate-fade-up animate-fade-up-1">
+              Know what to trust
+              <br />
+              before you act.
             </h2>
-            <p className="text-ink-soft mt-5 max-w-xl leading-relaxed animate-fade-up animate-fade-up-2">
-              Paste a claim, URL, article, or message. TrustLayer retrieves real
-              evidence, weighs supporting against contradicting sources, and
-              scores what it finds — transparently, or not at all.
+            <p className="text-ink-soft text-lg mt-6 max-w-lg mx-auto leading-relaxed animate-fade-up animate-fade-up-2">
+              Paste a claim, URL, article, or message. TrustLayer weighs
+              supporting against contradicting evidence — transparently, or
+              not at all.
             </p>
 
-            <div className="mt-10 grid sm:grid-cols-3 gap-6 max-w-3xl animate-fade-up animate-fade-up-3">
+            <div className="mt-16 grid sm:grid-cols-3 gap-10 max-w-3xl mx-auto text-left animate-fade-up animate-fade-up-3">
               {PRINCIPLES.map((p) => (
-                <div key={p.label} className="border-l-2 pl-3" style={{ borderColor: "var(--signal-blue)" }}>
+                <div key={p.label}>
                   <div className="text-sm font-medium">{p.label}</div>
-                  <div className="text-xs text-ink-soft mt-1 leading-relaxed">{p.detail}</div>
+                  <div className="text-sm text-ink-soft mt-1.5 leading-relaxed">{p.detail}</div>
                 </div>
               ))}
             </div>
@@ -195,10 +197,10 @@ export default function Home() {
         </section>
       )}
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
+      <main className="max-w-5xl mx-auto px-6 pb-16" style={{ paddingTop: "2.5rem" }}>
         <div className="grid lg:grid-cols-[1fr_260px] gap-10">
           <div>
-            <div className="border border-hairline bg-paper-raised p-6 sm:p-8">
+            <div className="surface p-8 sm:p-10">
               <label className="text-xs uppercase tracking-widest text-ink-soft font-mono">
                 Claim, URL, article, message, or screenshot text
               </label>
@@ -206,16 +208,17 @@ export default function Home() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Paste what you want to check…"
-                className="w-full mt-3 border border-hairline p-4 text-sm min-h-32 focus:border-ink outline-none bg-transparent font-body leading-relaxed"
+                className="w-full mt-4 text-base min-h-32 outline-none bg-transparent font-body leading-relaxed resize-none input-soft -m-1 p-1"
               />
 
               {showHero && (
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-2">
                   {EXAMPLES.map((ex) => (
                     <button
                       key={ex}
                       onClick={() => setInput(ex)}
-                      className="text-xs px-3 py-1.5 border border-hairline text-ink-soft hover:border-ink hover:text-ink transition-colors"
+                      className="text-xs px-3.5 py-2 rounded-full text-ink-soft hover:text-ink transition-colors"
+                      style={{ background: "var(--hairline-soft)" }}
                     >
                       {ex.length > 44 ? ex.slice(0, 44) + "…" : ex}
                     </button>
@@ -223,14 +226,14 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between mt-5 gap-4">
+              <div className="flex items-center justify-between mt-6 gap-4">
                 <span className="text-xs">
                   {error && <span style={{ color: "var(--trust-low)" }}>{error}</span>}
                 </span>
                 <button
                   onClick={() => analyze()}
                   disabled={loading || !input.trim()}
-                  className="shrink-0 px-6 py-2.5 text-sm font-medium text-paper disabled:opacity-40 hover:opacity-90 transition-opacity"
+                  className="shrink-0 px-7 py-3 text-sm font-medium text-paper disabled:opacity-40 rounded-full transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                   style={{ background: "var(--ink)" }}
                 >
                   {loading ? "Analyzing…" : "Analyze Trust"}
@@ -239,11 +242,11 @@ export default function Home() {
             </div>
 
             {loading && (
-              <div className="mt-6 border border-hairline p-6">
+              <div className="mt-6 surface p-7 animate-fade-up">
                 <p className="font-mono text-sm text-ink-soft">{LOADING_STAGES[stage]}</p>
-                <div className="h-0.5 bg-hairline mt-3">
+                <div className="h-1 rounded-full mt-4 overflow-hidden" style={{ background: "var(--hairline-soft)" }}>
                   <div
-                    className="h-full transition-all duration-700"
+                    className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${((stage + 1) / LOADING_STAGES.length) * 100}%`,
                       background: "var(--signal-blue)",
@@ -254,7 +257,7 @@ export default function Home() {
             )}
 
             {result && !loading && (
-              <div className="mt-8 space-y-10 animate-fade-up">
+              <div className="mt-10 space-y-10 animate-fade-up">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   {result.fromCache ? (
                     <span className="text-xs font-mono text-ink-soft">
@@ -266,7 +269,8 @@ export default function Home() {
                   {shareId && (
                     <button
                       onClick={copyShareLink}
-                      className="text-xs font-mono px-3 py-1.5 border border-hairline hover:border-ink transition-colors"
+                      className="text-xs font-mono px-4 py-2 rounded-full transition-all duration-300 hover:-translate-y-0.5"
+                      style={{ background: "var(--hairline-soft)" }}
                     >
                       {copied ? "Link copied ✓" : "Share this result ↗"}
                     </button>
@@ -277,8 +281,8 @@ export default function Home() {
 
                 {strongestEvidence.length > 0 && (
                   <div>
-                    <h2 className="font-display text-lg italic mb-4">Strongest Evidence</h2>
-                    <div className="border border-hairline">
+                    <h2 className="font-display text-xl italic mb-5">Strongest Evidence</h2>
+                    <div className="surface overflow-hidden divide-hairline-soft">
                       {strongestEvidence.map((source) => (
                         <SourceCard key={source.id} source={source} defaultOpen />
                       ))}
@@ -295,8 +299,8 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
-                    <h2 className="font-display text-lg italic">Full Evidence</h2>
+                  <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
+                    <h2 className="font-display text-xl italic">Full Evidence</h2>
                     <span className="text-xs font-mono text-ink-soft">
                       {result.claims.reduce((n, c) => n + c.sources.length, 0)} sources across{" "}
                       {result.claims.length} claim{result.claims.length === 1 ? "" : "s"}
@@ -311,7 +315,7 @@ export default function Home() {
           </div>
 
           <aside>
-            <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-3">History</div>
+            <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-4">History</div>
             <HistorySidebar items={history} onSelect={loadHistoryItem} />
           </aside>
         </div>
@@ -322,14 +326,14 @@ export default function Home() {
 
 function SummaryList({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="border border-hairline p-5">
+    <div className="surface-flat p-6">
       <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-3">{title}</div>
       {items.length === 0 ? (
         <p className="text-sm text-ink-soft">None noted.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {items.map((item, i) => (
-            <li key={i} className="text-sm flex gap-2 leading-relaxed">
+            <li key={i} className="text-sm flex gap-2.5 leading-relaxed">
               <span className="text-ink-soft">–</span>
               <span>{item}</span>
             </li>
@@ -348,18 +352,18 @@ function UncertaintyList({
   missingContext: string[];
 }) {
   return (
-    <div className="border border-hairline p-5" style={{ borderColor: "var(--trust-mid)" }}>
+    <div className="surface-flat p-6" style={{ background: "color-mix(in srgb, var(--trust-mid) 5%, var(--paper-raised))" }}>
       <div className="text-xs uppercase tracking-widest font-mono mb-3" style={{ color: "var(--trust-mid)" }}>
         Uncertainty
       </div>
 
-      <div className="text-xs font-medium text-ink-soft mb-1.5">What we don&apos;t know</div>
+      <div className="text-xs font-medium text-ink-soft mb-2">What we don&apos;t know</div>
       {dontKnow.length === 0 ? (
         <p className="text-sm text-ink-soft mb-4">None noted.</p>
       ) : (
-        <ul className="space-y-2 mb-4">
+        <ul className="space-y-2.5 mb-5">
           {dontKnow.map((item, i) => (
-            <li key={i} className="text-sm flex gap-2 leading-relaxed">
+            <li key={i} className="text-sm flex gap-2.5 leading-relaxed">
               <span className="text-ink-soft">–</span>
               <span>{item}</span>
             </li>
@@ -367,13 +371,13 @@ function UncertaintyList({
         </ul>
       )}
 
-      <div className="text-xs font-medium text-ink-soft mb-1.5">Missing context</div>
+      <div className="text-xs font-medium text-ink-soft mb-2">Missing context</div>
       {missingContext.length === 0 ? (
         <p className="text-sm text-ink-soft">None noted.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {missingContext.map((item, i) => (
-            <li key={i} className="text-sm flex gap-2 leading-relaxed">
+            <li key={i} className="text-sm flex gap-2.5 leading-relaxed">
               <span className="text-ink-soft">–</span>
               <span>{item}</span>
             </li>

@@ -21,6 +21,7 @@
   --ink: #14161A;
   --ink-soft: #55585F;
   --hairline: #E2E2DE;
+  --hairline-soft: rgba(20, 22, 26, 0.06);
   --signal-blue: #2D4FFF;
   --trust-high: #1A8754;
   --trust-mid: #C9A227;
@@ -29,6 +30,10 @@
   --font-display: 'Fraunces', serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
+
+  --shadow-soft: 0 1px 2px rgba(20, 22, 26, 0.03), 0 12px 32px -8px rgba(20, 22, 26, 0.08);
+  --shadow-lift: 0 2px 6px rgba(20, 22, 26, 0.04), 0 20px 48px -12px rgba(20, 22, 26, 0.14);
+  --ease-apple: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html.dark {
@@ -37,14 +42,18 @@ html.dark {
   --ink: #F2F2EF;
   --ink-soft: #9A9DA6;
   --hairline: #2A2C31;
+  --hairline-soft: rgba(255, 255, 255, 0.06);
   --signal-blue: #6C86FF;
   --trust-high: #34C87F;
   --trust-mid: #E3B94A;
   --trust-low: #E2594F;
+
+  --shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 16px 40px -8px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 56px -12px rgba(0, 0, 0, 0.6);
 }
 
 html {
-  transition: background-color 0.25s ease;
+  transition: background-color 0.3s ease;
 }
 
 * {
@@ -80,10 +89,45 @@ body {
   background-size: 22px 22px;
 }
 
+/* Soft rounded elevated surface — the base for cards throughout the app */
+.surface {
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 28px;
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.4s var(--ease-apple), transform 0.4s var(--ease-apple), border-color 0.3s ease;
+}
+
+.surface-flat {
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 20px;
+  transition: box-shadow 0.35s var(--ease-apple), border-color 0.3s ease, background 0.3s ease;
+}
+
+.surface-hover:hover {
+  box-shadow: var(--shadow-lift);
+  border-color: var(--hairline);
+}
+
+.divide-hairline-soft > * + * {
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.input-soft {
+  border-radius: 16px;
+  transition: box-shadow 0.3s var(--ease-apple);
+}
+
+.input-soft:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal-blue) 25%, transparent);
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -92,12 +136,12 @@ body {
 }
 
 .animate-fade-up {
-  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-up 0.8s var(--ease-apple) both;
 }
 
-.animate-fade-up-1 { animation-delay: 0.05s; }
-.animate-fade-up-2 { animation-delay: 0.1s; }
-.animate-fade-up-3 { animation-delay: 0.15s; }
+.animate-fade-up-1 { animation-delay: 0.08s; }
+.animate-fade-up-2 { animation-delay: 0.16s; }
+.animate-fade-up-3 { animation-delay: 0.24s; }
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
@@ -105,7 +149,7 @@ body {
 }
 
 .animate-pulse-dot {
-  animation: pulse-dot 2s ease-in-out infinite;
+  animation: pulse-dot 2.4s ease-in-out infinite;
 }
 
 /* visible keyboard focus everywhere */
