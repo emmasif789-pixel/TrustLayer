@@ -207,7 +207,13 @@ export default function Home() {
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Paste what you want to check…"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    analyze();
+                  }
+                }}
+                placeholder="Paste what you want to check… (Enter to analyze, Shift+Enter for a new line)"
                 className="w-full mt-4 text-base min-h-32 outline-none bg-transparent font-body leading-relaxed resize-none input-soft -m-1 p-1"
               />
 
@@ -233,83 +239,115 @@ export default function Home() {
                 <button
                   onClick={() => analyze()}
                   disabled={loading || !input.trim()}
-                  className="shrink-0 px-7 py-3 text-sm font-medium text-paper disabled:opacity-40 rounded-full transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
-                  style={{ background: "var(--ink)" }}
+                  className="group shrink-0 pl-8 pr-6 py-3.5 text-sm font-semibold text-paper disabled:opacity-40 rounded-full transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                  style={{
+                    background: "linear-gradient(135deg, var(--ink), color-mix(in srgb, var(--ink) 82%, var(--signal-blue)))",
+                    boxShadow: "0 8px 24px -8px color-mix(in srgb, var(--signal-blue) 45%, transparent)",
+                  }}
                 >
                   {loading ? "Analyzing…" : "Analyze Trust"}
+                  {!loading && (
+                    <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+                  )}
                 </button>
               </div>
             </div>
 
             {loading && (
-              <div className="mt-6 surface p-7 animate-fade-up">
-                <p className="font-mono text-sm text-ink-soft">{LOADING_STAGES[stage]}</p>
+              <div className="mt-6 surface p-7 sm:p-8 animate-fade-up overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span
+                      className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping-slow"
+                      style={{ background: "var(--signal-blue)" }}
+                    />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: "var(--signal-blue)" }} />
+                  </span>
+                  <p className="font-mono text-sm text-ink-soft">{LOADING_STAGES[stage]}</p>
+                </div>
                 <div className="h-1 rounded-full mt-4 overflow-hidden" style={{ background: "var(--hairline-soft)" }}>
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${((stage + 1) / LOADING_STAGES.length) * 100}%`,
                       background: "var(--signal-blue)",
+                      transitionTimingFunction: "var(--ease-apple)",
                     }}
                   />
+                </div>
+
+                {/* Skeleton preview of the result taking shape */}
+                <div className="mt-8 space-y-4">
+                  <div className="shimmer h-10 w-2/3 rounded-xl" />
+                  <div className="shimmer h-4 w-full rounded-lg" />
+                  <div className="shimmer h-4 w-4/5 rounded-lg" />
+                  <div className="flex gap-3 pt-2">
+                    <div className="shimmer h-16 flex-1 rounded-2xl" />
+                    <div className="shimmer h-16 flex-1 rounded-2xl" />
+                    <div className="shimmer h-16 flex-1 rounded-2xl" />
+                  </div>
                 </div>
               </div>
             )}
 
             {result && !loading && (
-              <div className="mt-10 space-y-10 animate-fade-up">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  {result.fromCache ? (
-                    <span className="text-xs font-mono text-ink-soft">
-                      ⚡ Instant result — matches a check from the last 24h
-                    </span>
-                  ) : (
-                    <span />
-                  )}
-                  {shareId && (
-                    <button
-                      onClick={copyShareLink}
-                      className="text-xs font-mono px-4 py-2 rounded-full transition-all duration-300 hover:-translate-y-0.5"
-                      style={{ background: "var(--hairline-soft)" }}
-                    >
-                      {copied ? "Link copied ✓" : "Share this result ↗"}
-                    </button>
-                  )}
-                </div>
-
-                <TrustScoreGauge trust={result.trust} />
-
-                {strongestEvidence.length > 0 && (
-                  <div>
-                    <h2 className="font-display text-xl italic mb-5">Strongest Evidence</h2>
-                    <div className="surface overflow-hidden divide-hairline-soft">
-                      {strongestEvidence.map((source) => (
-                        <SourceCard key={source.id} source={source} defaultOpen />
-                      ))}
-                    </div>
+              <div className="mt-8 animate-fade-up">
+                {(result.fromCache || shareId) && (
+                  <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+                    {result.fromCache ? (
+                      <span className="text-xs font-mono text-ink-soft">
+                        ⚡ Instant result — matches a check from the last 24h
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    {shareId && (
+                      <button
+                        onClick={copyShareLink}
+                        className="text-xs font-mono px-4 py-2 rounded-full transition-all duration-300 hover:-translate-y-0.5"
+                        style={{ background: "var(--hairline-soft)" }}
+                      >
+                        {copied ? "Link copied ✓" : "Share this result ↗"}
+                      </button>
+                    )}
                   </div>
                 )}
 
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <SummaryList title="What we know" items={result.whatWeKnow} />
-                  <UncertaintyList
-                    dontKnow={result.whatWeDontKnow}
-                    missingContext={result.missingContext}
-                  />
-                </div>
+                <div className="space-y-10">
+                  <TrustScoreGauge trust={result.trust} />
 
-                <div>
-                  <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
-                    <h2 className="font-display text-xl italic">Full Evidence</h2>
-                    <span className="text-xs font-mono text-ink-soft">
-                      {result.claims.reduce((n, c) => n + c.sources.length, 0)} sources across{" "}
-                      {result.claims.length} claim{result.claims.length === 1 ? "" : "s"}
-                    </span>
+                  {strongestEvidence.length > 0 && (
+                    <div>
+                      <h2 className="font-display text-xl italic mb-5">Strongest Evidence</h2>
+                      <div className="surface overflow-hidden divide-hairline-soft">
+                        {strongestEvidence.map((source) => (
+                          <SourceCard key={source.id} source={source} defaultOpen />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <SummaryList title="What we know" items={result.whatWeKnow} />
+                    <UncertaintyList
+                      dontKnow={result.whatWeDontKnow}
+                      missingContext={result.missingContext}
+                    />
                   </div>
-                  <EvidenceMap claims={result.claims} />
-                </div>
 
-                <DecisionMode claims={result.claims} overallScore={result.trust.overallScore} />
+                  <div>
+                    <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
+                      <h2 className="font-display text-xl italic">Full Evidence</h2>
+                      <span className="text-xs font-mono text-ink-soft">
+                        {result.claims.reduce((n, c) => n + c.sources.length, 0)} sources across{" "}
+                        {result.claims.length} claim{result.claims.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <EvidenceMap claims={result.claims} />
+                  </div>
+
+                  <DecisionMode claims={result.claims} overallScore={result.trust.overallScore} />
+                </div>
               </div>
             )}
           </div>
