@@ -33,6 +33,10 @@ score.
    - Tavily: https://tavily.com (free tier, 1000 searches/month, no card required)
    - Supabase (optional): https://supabase.com - create a project, then run
      `supabase/schema.sql` in the SQL editor to create the `analyses` table.
+     For accounts (magic-link sign-in) to work, also go to Authentication ->
+     URL Configuration in the Supabase dashboard and add your deployed URL
+     (e.g. `https://your-app.vercel.app`) to both "Site URL" and "Redirect
+     URLs" - otherwise the sign-in link will redirect to the wrong place.
 
 3. Configure environment: `cp .env.example .env.local` and fill in
    `GROQ_API_KEY`, `TAVILY_API_KEY`, and (optionally) the two
@@ -42,6 +46,14 @@ score.
 
 5. Deploy: push to GitHub, import into Vercel, add the same env vars in
    Vercel project settings. No other config needed.
+
+- **Accounts** (optional, Supabase Auth magic-link): sign in with just an
+  email - no password. History is tied to your account and follows you
+  across devices. Signing in for the first time automatically claims any
+  anonymous history already made on that browser. Deleting a history item
+  requires being signed in (row-level security enforces this - anonymous
+  rows genuinely can't be deleted, by design). If you don't configure
+  Supabase, the app still works fully anonymously as before.
 
 ## Additional features
 

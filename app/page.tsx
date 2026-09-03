@@ -7,9 +7,11 @@ import SourceCard from "@/components/SourceCard";
 import DecisionMode from "@/components/DecisionMode";
 import HistorySidebar from "@/components/HistorySidebar";
 import ThemeToggle from "@/components/ThemeToggle";
+import AccountMenu from "@/components/AccountMenu";
 import Link from "next/link";
 import { AnalysisResult, Claim, EvidenceSource } from "@/lib/types";
 import { supabase, getDeviceId } from "@/lib/supabase";
+import { useAuth } from "@/lib/useAuth";
 
 /**
  * Surface the single most decision-relevant piece of evidence from the
@@ -45,6 +47,7 @@ const PRINCIPLES = [
 ];
 
 export default function Home() {
+  const { session } = useAuth();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState(0);
@@ -62,16 +65,16 @@ export default function Home() {
   useEffect(() => {
     if (!supabase) return;
     const deviceId = getDeviceId();
-    supabase
+    const query = supabase
       .from("analyses")
       .select("id, input_raw, overall_score, verdict_label, created_at")
-      .eq("device_id", deviceId)
       .order("created_at", { ascending: false })
-      .limit(20)
-      .then(({ data }) => {
-        if (data) setHistory(data);
-      });
-  }, [result]);
+      .limit(20);
+
+    (session ? query.eq("user_id", session.user.id) : query.eq("device_id", deviceId)).then(({ data }) => {
+      if (data) setHistory(data);
+    });
+  }, [result, session]);
 
   useEffect(() => {
     if (!loading) return;
@@ -111,6 +114,7 @@ export default function Home() {
           .from("analyses")
           .insert({
             device_id: deviceId,
+            user_id: session?.user.id ?? null,
             input_type: data.inputType,
             input_raw: data.inputRaw,
             overall_score: data.trust.overallScore,
@@ -174,6 +178,12 @@ export default function Home() {
     }
   }
 
+  async function deleteHistoryItem(id: string) {
+    if (!supabase) return;
+    await supabase.from("analyses").delete().eq("id", id);
+    setHistory((h) => h.filter((item) => item.id !== id));
+  }
+
   async function copyShareLink() {
     if (!shareId) return;
     const url = `${window.location.origin}/analysis/${shareId}`;
@@ -217,6 +227,7 @@ export default function Home() {
               Evidence-backed. Never fabricated.
             </span>
             <ThemeToggle />
+            <AccountMenu session={session} />
           </div>
         </div>
       </header>
@@ -440,7 +451,7 @@ export default function Home() {
 
           <aside>
             <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-4">History</div>
-            <HistorySidebar items={history} onSelect={loadHistoryItem} />
+            <HistorySidebar items={history} onSelect={loadHistoryItem} onDelete={deleteHistoryItem} canDelete={!!session} />
           </aside>
         </div>
       </main>
