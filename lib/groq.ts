@@ -4,6 +4,7 @@ import { classifyDomain } from "./domainReputation";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+const VISION_MODEL = process.env.GROQ_VISION_MODEL || "qwen/qwen3.6-27b";
 
 interface OpenAITool {
   type: "function";
@@ -385,4 +386,47 @@ export async function assessDecisionRisk(
       potentialConsequences: [],
     }
   );
+}
+
+// ---------- Screenshot / image input: OCR via Groq vision ----------
+
+/**
+ * Extracts visible text from an image (screenshot of a post, article, message,
+ * etc.) using a Groq vision model. Plain text out — no forced JSON/tool call,
+ * since this is a preview-tier vision model and forcing structured output on
+ * it is unreliable. Returns null on any failure so the caller can show a
+ * clear "couldn't read this image" message rather than guessing.
+ */
+export async function extractTextFromImage(imageDataUrl: string): Promise<string | null> {
+  try {
+    const res = await groqFetch({
+      model: VISION_MODEL,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Extract all visible text from this image exactly as written — this is a screenshot of a post, article, or message the user wants fact-checked. Return ONLY the extracted text, no commentary, no markdown, no quotes around it. If there is no readable text, respond with exactly: NO_TEXT_FOUND",
+            },
+            { type: "image_url", image_url: { url: imageDataUrl } },
+          ],
+        },
+      ],
+      temperature: 0,
+      max_tokens: 1024,
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const content: string | undefined = data.choices?.[0]?.message?.content;
+    if (!content) return null;
+
+    const trimmed = content.trim();
+    if (!trimmed || trimmed === "NO_TEXT_FOUND") return null;
+    return trimmed;
+  } catch {
+    return null;
+  }
 }

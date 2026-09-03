@@ -69,8 +69,10 @@ score.
   in localStorage, stored in Supabase with a permissive RLS policy. Fine
   for a demo/MVP; add real auth (Supabase Auth) before handling multiple
   real users on shared infrastructure.
-- Screenshot input is accepted as pasted/OCR'd text for now - no image
-  upload/OCR pipeline is wired yet.
+- Screenshot input is real: upload an image via the button next to the input
+  box, and it goes through Groq's vision model (`GROQ_VISION_MODEL`, default
+  `qwen/qwen3.6-27b` — currently a preview-tier model on Groq) to extract the
+  text, which then feeds the normal claim pipeline.
 
 ## Architecture
 

@@ -52,6 +52,8 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [shareId, setShareId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const verdictRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<
     { id: string; input_raw: string; overall_score: number; verdict_label: string; created_at: string }[]
@@ -123,6 +125,42 @@ export default function Home() {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleImageUpload(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Image is too large — please use a file under 8MB.");
+      return;
+    }
+
+    setOcrLoading(true);
+    setError(null);
+    try {
+      const imageDataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Couldn't read that file."));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't read that image.");
+
+      setInput(data.text);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't process that image.");
+    } finally {
+      setOcrLoading(false);
     }
   }
 
@@ -248,9 +286,42 @@ export default function Home() {
               )}
 
               <div className="flex items-center justify-between mt-6 gap-4">
-                <span className="text-xs">
-                  {error && <span style={{ color: "var(--trust-low)" }}>{error}</span>}
-                </span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={ocrLoading}
+                    title="Upload a screenshot"
+                    className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50"
+                    style={{ background: "var(--hairline-soft)" }}
+                  >
+                    {ocrLoading ? (
+                      <span className="text-xs font-mono animate-pulse-dot">…</span>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="3" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                    )}
+                  </button>
+                  {ocrLoading && (
+                    <span className="text-xs text-ink-soft font-mono truncate">Reading screenshot…</span>
+                  )}
+                  {!ocrLoading && error && (
+                    <span className="text-xs truncate" style={{ color: "var(--trust-low)" }}>{error}</span>
+                  )}
+                </div>
                 <button
                   onClick={() => analyze()}
                   disabled={loading || !input.trim()}
