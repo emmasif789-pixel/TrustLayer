@@ -21,10 +21,29 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://trustlayer-green-mu.vercel.app";
+
 export const metadata: Metadata = {
-  title: "TrustLayer — Know what to trust before you act",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "TrustLayer — Know what to trust before you act",
+    template: "%s · TrustLayer",
+  },
   description:
     "Paste a claim, URL, or message. TrustLayer finds real evidence, scores it transparently, and shows you what you actually know.",
+  openGraph: {
+    title: "TrustLayer — Know what to trust before you act",
+    description: "Real evidence. Transparent scoring. Never fabricated.",
+    url: SITE_URL,
+    siteName: "TrustLayer",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TrustLayer — Know what to trust before you act",
+    description: "Real evidence. Transparent scoring. Never fabricated.",
+    images: ["/opengraph-image"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

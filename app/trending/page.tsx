@@ -5,7 +5,7 @@ import { verdictColor, verdictHeadline } from "@/lib/verdict";
 import { AnalysisResult } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Trending Checks — TrustLayer",
+  title: "Trending Checks",
   description: "See what people are fact-checking right now, and the evidence behind each verdict.",
 };
 

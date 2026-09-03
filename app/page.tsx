@@ -185,11 +185,11 @@ export default function Home() {
 
       {showHero && (
         <section className="bg-grid">
-          <div className="max-w-4xl mx-auto px-6 pt-24 pb-20 text-center">
+          <div className="max-w-4xl mx-auto px-6 pt-16 sm:pt-24 pb-14 sm:pb-20 text-center">
             <span className="text-xs font-mono uppercase tracking-[0.2em] text-ink-soft animate-fade-up">
               Trust Verification
             </span>
-            <h2 className="font-display italic text-5xl sm:text-6xl mt-5 leading-[1.1] animate-fade-up animate-fade-up-1">
+            <h2 className="font-display italic text-4xl sm:text-5xl md:text-6xl mt-5 leading-[1.15] sm:leading-[1.1] animate-fade-up animate-fade-up-1">
               Know what to trust
               <br />
               before you act.
@@ -215,7 +215,7 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-6 pb-16" style={{ paddingTop: "2.5rem" }}>
         <div className="grid lg:grid-cols-[1fr_260px] gap-10">
           <div>
-            <div className="surface p-8 sm:p-10">
+            <div className="surface p-6 sm:p-10">
               <label className="text-xs uppercase tracking-widest text-ink-soft font-mono">
                 Claim, URL, article, message, or screenshot text
               </label>

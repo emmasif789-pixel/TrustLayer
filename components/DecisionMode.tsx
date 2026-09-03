@@ -54,7 +54,7 @@ export default function DecisionMode({
   }
 
   return (
-    <div className="surface p-8 sm:p-10">
+    <div className="surface p-6 sm:p-10">
       <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-4">Decision Mode</div>
 
       {!result && (

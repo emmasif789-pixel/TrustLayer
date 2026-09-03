@@ -48,12 +48,12 @@ export default function TrustScoreGauge({ trust }: { trust: TrustBreakdown }) {
   return (
     <div className="surface overflow-hidden">
       {/* Verdict — the one thing a reader must see in half a second */}
-      <div className="p-8 sm:p-10 pb-8 flex items-start justify-between gap-8 flex-wrap">
+      <div className="p-6 sm:p-10 pb-6 sm:pb-8 flex items-start justify-between gap-6 sm:gap-8 flex-wrap">
         <div>
           <div className="text-xs uppercase tracking-widest text-ink-soft font-mono mb-3">
             Verdict
           </div>
-          <h2 className="font-display italic text-5xl sm:text-6xl leading-tight" style={{ color }}>
+          <h2 className="font-display italic text-4xl sm:text-5xl md:text-6xl leading-tight" style={{ color }}>
             {headline}
           </h2>
           <p className="mt-5 text-ink-soft text-base leading-relaxed max-w-lg">{trust.summary}</p>
@@ -79,7 +79,7 @@ export default function TrustScoreGauge({ trust }: { trust: TrustBreakdown }) {
       <div style={{ borderTop: "1px solid var(--hairline-soft)" }}>
         <button
           onClick={() => setBreakdownOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-8 sm:px-10 py-4 text-xs font-mono uppercase tracking-widest text-ink-soft hover:text-ink transition-colors"
+          className="w-full flex items-center justify-between px-6 sm:px-10 py-4 text-xs font-mono uppercase tracking-widest text-ink-soft hover:text-ink transition-colors"
         >
           <span>Scoring breakdown</span>
           <span
@@ -91,7 +91,7 @@ export default function TrustScoreGauge({ trust }: { trust: TrustBreakdown }) {
         </button>
 
         {breakdownOpen && (
-          <div className="px-8 sm:px-10 pb-8 space-y-4 animate-fade-up">
+          <div className="px-6 sm:px-10 pb-6 sm:pb-8 space-y-4 animate-fade-up">
             {subScoreLabels.map(({ key, label, invert }) => {
               const value = trust.subScores[key];
               const barColor = invert && value > 40 ? "var(--trust-low)" : "var(--ink)";

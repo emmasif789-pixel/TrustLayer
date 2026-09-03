@@ -19,10 +19,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const result = await fetchAnalysis(id);
-  if (!result) return { title: "TrustLayer" };
+  if (!result) return { title: "Analysis not found" };
 
   const headline = verdictHeadline(result.trust);
-  const title = `${headline} (${result.trust.overallScore}/100) — TrustLayer`;
+  const title = `${headline} (${result.trust.overallScore}/100)`;
   const description =
     result.inputRaw.length > 140 ? result.inputRaw.slice(0, 140) + "…" : result.inputRaw;
 
