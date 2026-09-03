@@ -21,7 +21,7 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://trustlayer-green-mu.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://trustlayer-emma.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
