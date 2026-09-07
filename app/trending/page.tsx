@@ -3,6 +3,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { verdictColor, verdictHeadline } from "@/lib/verdict";
 import { AnalysisResult } from "@/lib/types";
+import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
   title: "Trending Checks",
@@ -58,28 +59,9 @@ export default async function TrendingPage() {
 
   return (
     <div className="min-h-screen bg-grid">
-      <header style={{ borderBottom: "1px solid var(--hairline-soft)" }} className="bg-paper/80 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <svg width="20" height="20" viewBox="0 0 32 32" className="shrink-0">
-              <rect width="32" height="32" rx="8" style={{ fill: "var(--ink)" }} />
-              <rect x="7" y="9" width="18" height="2.4" rx="1.2" style={{ fill: "var(--paper)" }} />
-              <rect x="7" y="14.8" width="13" height="2.4" rx="1.2" style={{ fill: "var(--signal-blue)" }} />
-              <rect x="7" y="20.6" width="8" height="2.4" rx="1.2" style={{ fill: "var(--paper)" }} opacity="0.5" />
-            </svg>
-            <span className="font-display text-lg italic">TrustLayer</span>
-          </Link>
-          <Link
-            href="/"
-            className="text-xs font-mono px-4 py-2 rounded-full transition-all duration-300 hover:-translate-y-0.5"
-            style={{ background: "var(--hairline-soft)" }}
-          >
-            Check something new →
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
-      <main className="max-w-3xl mx-auto px-6 py-14">
+      <main className="max-w-3xl mx-auto px-6 py-14 animate-fade-up">
         <span className="text-xs font-mono uppercase tracking-[0.2em] text-ink-soft">Live</span>
         <h1 className="font-display italic text-4xl sm:text-5xl mt-3 leading-tight">
           What people are checking

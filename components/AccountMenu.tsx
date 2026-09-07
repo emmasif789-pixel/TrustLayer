@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
@@ -10,6 +10,23 @@ export default function AccountMenu({ session }: { session: Session | null }) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
 
   if (!supabase) return null;
 
@@ -39,19 +56,22 @@ export default function AccountMenu({ session }: { session: Session | null }) {
 
   if (session) {
     return (
-      <div className="relative">
+      <div className="relative" ref={menuRef}>
         <button
           onClick={() => setOpen((v) => !v)}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
           style={{ background: "var(--signal-blue)", color: "white" }}
           title={session.user.email ?? "Account"}
         >
           {(session.user.email ?? "?")[0].toUpperCase()}
         </button>
         {open && (
-          <div className="absolute right-0 top-11 surface p-4 w-56 z-20 animate-fade-up">
+          <div role="menu" className="absolute right-0 top-11 surface p-4 w-56 z-20 animate-fade-up">
             <p className="text-xs text-ink-soft truncate mb-3">{session.user.email}</p>
             <button
+              role="menuitem"
               onClick={signOut}
               className="text-xs font-mono px-3 py-2 rounded-full w-full text-left transition-colors hover:text-ink"
               style={{ background: "var(--hairline-soft)" }}
@@ -65,10 +85,12 @@ export default function AccountMenu({ session }: { session: Session | null }) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="text-xs font-mono px-3.5 py-1.5 rounded-full text-ink-soft hover:text-ink transition-colors"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="text-xs font-mono px-3.5 py-1.5 rounded-full text-ink-soft hover:text-ink transition-all duration-300 hover:-translate-y-0.5"
         style={{ background: "var(--hairline-soft)" }}
       >
         Sign in
@@ -90,6 +112,7 @@ export default function AccountMenu({ session }: { session: Session | null }) {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMagicLink()}
                 placeholder="you@example.com"
+                autoFocus
                 className="w-full rounded-xl p-3 text-sm outline-none bg-transparent input-soft"
                 style={{ background: "var(--hairline-soft)" }}
               />

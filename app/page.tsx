@@ -6,9 +6,7 @@ import EvidenceMap from "@/components/EvidenceMap";
 import SourceCard from "@/components/SourceCard";
 import DecisionMode from "@/components/DecisionMode";
 import HistorySidebar from "@/components/HistorySidebar";
-import ThemeToggle from "@/components/ThemeToggle";
-import AccountMenu from "@/components/AccountMenu";
-import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
 import { AnalysisResult, Claim, EvidenceSource } from "@/lib/types";
 import { supabase, getDeviceId } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
@@ -197,40 +195,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 bg-paper/80 backdrop-blur-md z-10" style={{ borderBottom: "1px solid var(--hairline-soft)" }}>
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
-          <button
-            onClick={() => {
-              setResult(null);
-              setInput("");
-              setError(null);
-            }}
-            className="flex items-center gap-2.5"
-          >
-            <svg width="20" height="20" viewBox="0 0 32 32" className="shrink-0">
-              <rect width="32" height="32" rx="8" style={{ fill: "var(--ink)" }} />
-              <rect x="7" y="9" width="18" height="2.4" rx="1.2" style={{ fill: "var(--paper)" }} />
-              <rect x="7" y="14.8" width="13" height="2.4" rx="1.2" style={{ fill: "var(--signal-blue)" }} className="animate-pulse-dot" />
-              <rect x="7" y="20.6" width="8" height="2.4" rx="1.2" style={{ fill: "var(--paper)" }} opacity="0.5" />
-            </svg>
-            <span className="font-display text-lg italic">TrustLayer</span>
-          </button>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/trending"
-              className="text-xs font-mono px-3 py-1.5 rounded-full text-ink-soft hover:text-ink transition-colors"
-              style={{ background: "var(--hairline-soft)" }}
-            >
-              Trending
-            </Link>
-            <span className="hidden sm:block text-xs font-mono text-ink-soft">
-              Evidence-backed. Never fabricated.
-            </span>
-            <ThemeToggle />
-            <AccountMenu session={session} />
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        onLogoClick={() => {
+          setResult(null);
+          setInput("");
+          setError(null);
+        }}
+      />
 
       {showHero && (
         <section className="bg-grid">
