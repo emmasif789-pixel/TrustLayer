@@ -55,8 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               try {
                 const saved = localStorage.getItem('trustlayer_theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (saved === 'dark' || (!saved && prefersDark)) {
+                if (saved !== 'light') {
                   document.documentElement.classList.add('dark');
                 }
               } catch (e) {}
