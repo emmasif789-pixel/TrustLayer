@@ -32,6 +32,21 @@ const LOADING_STAGES = [
   "Scoring evidence…",
 ];
 
+const LOADING_TIPS = [
+  "A claim can be technically true and still misleading — missing context does most of the damage.",
+  "Independent corroboration matters more than source count: five outlets repeating one wire story isn't five sources.",
+  "\u201cStudies show\u201d means nothing without a link. Real evidence is always checkable.",
+  "The most convincing misinformation usually contains a real fact, stretched past what it actually supports.",
+  "TrustLayer's score is arithmetic on visible sub-scores — never a single opaque number from the model.",
+  "Primary sources (the original study, the actual filing) beat articles about articles about the source.",
+  "A source being popular isn't the same as it being independent — check who's actually reporting first.",
+  "Screenshots can be edited. When in doubt, TrustLayer traces claims back to a live, checkable source.",
+  "Satire sites and parody accounts are a common source of claims that spread as if they were real news.",
+  "If evidence is thin, the honest answer is \u201cInsufficient Evidence\u201d — not a confident-sounding guess.",
+  "Recency matters: a true claim from 2019 can be false today if circumstances changed.",
+  "Correlation isn't causation — two things trending together doesn't mean one caused the other.",
+];
+
 const EXAMPLES = [
   "Drinking lemon water every morning boosts your metabolism",
   "5G networks were rolled out to spread COVID-19",
@@ -49,6 +64,7 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [shareId, setShareId] = useState<string | null>(null);
@@ -87,6 +103,17 @@ export default function Home() {
   }, [loading]);
 
   useEffect(() => {
+    if (!loading) return;
+    // Cycles independently of the stage progress — the pipeline can run
+    // well past the 4 stage messages (rate-limit waits, retries), so tips
+    // keep the wait feeling alive instead of stalled on the last stage.
+    const interval = setInterval(() => {
+      setTipIndex((i) => (i + 1) % LOADING_TIPS.length);
+    }, 4200);
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  useEffect(() => {
     if (result && verdictRef.current) {
       verdictRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -96,6 +123,7 @@ export default function Home() {
     const text = overrideInput ?? input;
     if (!text.trim()) return;
     setStage(0);
+    setTipIndex(Math.floor(Math.random() * LOADING_TIPS.length));
     setLoading(true);
     setError(null);
     setResult(null);
@@ -419,6 +447,18 @@ export default function Home() {
                       transitionTimingFunction: "var(--ease-apple)",
                     }}
                   />
+                </div>
+
+                <div className="mt-6 rounded-2xl p-4 flex gap-3 items-start" style={{ background: "var(--hairline-soft)" }}>
+                  <span className="text-sm shrink-0 mt-0.5">💡</span>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-ink-soft mb-1">
+                      While you wait
+                    </div>
+                    <p key={tipIndex} className="text-sm leading-relaxed animate-fade-up">
+                      {LOADING_TIPS[tipIndex]}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Skeleton preview of the result taking shape */}
