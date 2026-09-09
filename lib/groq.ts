@@ -430,3 +430,32 @@ export async function extractTextFromImage(imageDataUrl: string): Promise<string
     return null;
   }
 }
+
+// ---------- Voice input: transcription via Groq Whisper ----------
+
+const WHISPER_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3-turbo";
+
+/**
+ * Transcribes an audio recording. Unlike the vision OCR path, this uses
+ * Groq's production Whisper model — fast, accurate, and not preview-tier.
+ */
+export async function transcribeAudio(file: Blob, filename: string): Promise<string | null> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error("GROQ_API_KEY is not set");
+
+  const form = new FormData();
+  form.append("file", file, filename);
+  form.append("model", WHISPER_MODEL);
+  form.append("response_format", "text");
+
+  const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form,
+  });
+
+  if (!res.ok) return null;
+
+  const text = (await res.text()).trim();
+  return text || null;
+}

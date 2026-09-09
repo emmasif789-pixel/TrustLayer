@@ -110,6 +110,10 @@ score.
   box, and it goes through Groq's vision model (`GROQ_VISION_MODEL`, default
   `qwen/qwen3.6-27b` — currently a preview-tier model on Groq) to extract the
   text, which then feeds the normal claim pipeline.
+- Voice input is real too: tap the mic button, speak the claim, it's
+  transcribed via Groq's production Whisper model (`GROQ_WHISPER_MODEL`,
+  default `whisper-large-v3-turbo`) — more reliable than the vision path
+  since Whisper isn't preview-tier.
 
 ## Architecture
 

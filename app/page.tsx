@@ -54,7 +54,11 @@ export default function Home() {
   const [shareId, setShareId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const verdictRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<
     { id: string; input_raw: string; overall_score: number; verdict_label: string; created_at: string }[]
@@ -166,6 +170,50 @@ export default function Home() {
     }
   }
 
+  async function startRecording() {
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        if (blob.size > 0) await transcribeRecording(blob);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+    } catch {
+      setError("Couldn't access your microphone — check your browser permissions.");
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
+  }
+
+  async function transcribeRecording(blob: Blob) {
+    setTranscribing(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("audio", blob, "recording.webm");
+      const res = await fetch("/api/transcribe", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't transcribe that.");
+      setInput(data.text);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't process that recording.");
+    } finally {
+      setTranscribing(false);
+    }
+  }
+
   async function loadHistoryItem(id: string) {
     if (!supabase) return;
     const { data } = await supabase.from("analyses").select("result").eq("id", id).single();
@@ -237,7 +285,7 @@ export default function Home() {
           <div>
             <div className="surface p-6 sm:p-10">
               <label className="text-xs uppercase tracking-widest text-ink-soft font-mono">
-                Claim, URL, article, message, or screenshot text
+                Claim, URL, article, message, screenshot, or voice
               </label>
               <textarea
                 value={input}
@@ -297,10 +345,39 @@ export default function Home() {
                       </svg>
                     )}
                   </button>
+
+                  <button
+                    onClick={recording ? stopRecording : startRecording}
+                    disabled={transcribing}
+                    title={recording ? "Stop recording" : "Speak your claim"}
+                    className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50"
+                    style={{ background: recording ? "color-mix(in srgb, var(--trust-low) 20%, transparent)" : "var(--hairline-soft)" }}
+                  >
+                    {transcribing ? (
+                      <span className="text-xs font-mono animate-pulse-dot">…</span>
+                    ) : recording ? (
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping-slow" style={{ background: "var(--trust-low)" }} />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: "var(--trust-low)" }} />
+                      </span>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="9" y="2" width="6" height="12" rx="3" />
+                        <path d="M5 10a7 7 0 0 0 14 0M12 19v3" />
+                      </svg>
+                    )}
+                  </button>
+
                   {ocrLoading && (
                     <span className="text-xs text-ink-soft font-mono truncate">Reading screenshot…</span>
                   )}
-                  {!ocrLoading && error && (
+                  {recording && (
+                    <span className="text-xs text-ink-soft font-mono truncate">Listening… tap to stop</span>
+                  )}
+                  {transcribing && (
+                    <span className="text-xs text-ink-soft font-mono truncate">Transcribing…</span>
+                  )}
+                  {!ocrLoading && !recording && !transcribing && error && (
                     <span className="text-xs truncate" style={{ color: "var(--trust-low)" }}>{error}</span>
                   )}
                 </div>
