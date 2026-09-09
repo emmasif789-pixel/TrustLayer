@@ -57,6 +57,31 @@ score.
 
 ## Additional features
 
+- **Discord bot**: a `/checkclaim text:<claim>` slash command that runs the
+  exact same analysis pipeline as the web app and posts the verdict back as
+  an embed, with a link to the full evidence page. Setup:
+  1. Create an application at https://discord.com/developers/applications
+  2. Copy its **Public Key** and **Application ID** from the General
+     Information tab into `DISCORD_PUBLIC_KEY` / `DISCORD_APPLICATION_ID`
+  3. Under **Bot**, create a bot and copy its token (only needed once, for
+     the registration step below — not stored anywhere in the app)
+  4. Deploy the app so `/api/discord` is live, then set that URL
+     (`https://your-app.vercel.app/api/discord`) as the **Interactions
+     Endpoint URL** on the General Information tab. Discord will send a
+     test ping — the endpoint has to be live and the env vars set *before*
+     this will succeed.
+  5. Register the slash command (one-time, run locally with your bot token
+     — replace `YOUR_BOT_TOKEN` and `YOUR_APPLICATION_ID`):
+     ```
+     curl -X POST https://discord.com/api/v10/applications/YOUR_APPLICATION_ID/commands \
+       -H "Authorization: Bot YOUR_BOT_TOKEN" \
+       -H "Content-Type: application/json" \
+       -d '{"name":"checkclaim","description":"Fact-check a claim with TrustLayer","options":[{"name":"text","description":"The claim, URL, or message to check","type":3,"required":true}]}'
+     ```
+  6. Invite the bot to a server: Developers Portal -> OAuth2 -> URL
+     Generator -> scopes `applications.commands` -> open the generated URL
+  7. Try `/checkclaim text: <anything>` in a channel the bot is in
+
 - **Source quality grounding**: sourceQuality is no longer a pure LLM guess.
   `lib/domainReputation.ts` is a small curated dataset (wire services,
   gov/edu, major outlets, aggregators, social media, known-unreliable

@@ -15,6 +15,23 @@ export function verdictColor(label: TrustBreakdown["verdictLabel"]): string {
 }
 
 /**
+ * Same mapping as verdictColor, but as a literal hex value for contexts
+ * that can't use CSS custom properties (Discord embeds, generated images).
+ */
+export function verdictColorHex(label: TrustBreakdown["verdictLabel"]): string {
+  switch (label) {
+    case "High Trust":
+      return "#1A8754";
+    case "Moderate Trust":
+    case "Sources Disagree":
+      return "#C9A227";
+    case "Low Trust":
+    case "Insufficient Evidence":
+      return "#C1372E";
+  }
+}
+
+/**
  * A punchier, plainer-language headline derived from the same verdictLabel
  * and sub-scores the rest of the UI already shows — no new judgment, just
  * a scannable restatement of what the score already means.
